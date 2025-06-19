@@ -1,0 +1,321 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #FDF5E6;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6559\u80b2", "label": "\u6559\u80b2", "shadow": true, "shape": "dot", "size": 97.0111778206687, "title": "\u8bcd\u9891: 1966"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u804c\u4e1a", "label": "\u804c\u4e1a", "shadow": true, "shape": "dot", "size": 85.66281346999824, "title": "\u8bcd\u9891: 763"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4ea7\u4e1a", "label": "\u4ea7\u4e1a", "shadow": true, "shape": "dot", "size": 90.69477524894228, "title": "\u8bcd\u9891: 1161"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u53d1\u5c55", "label": "\u53d1\u5c55", "shadow": true, "shape": "dot", "size": 99.85490500228269, "title": "\u8bcd\u9891: 2492"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u521b\u65b0", "label": "\u521b\u65b0", "shadow": true, "shape": "dot", "size": 94.86594795839366, "title": "\u8bcd\u9891: 1644"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u79d1\u6280", "label": "\u79d1\u6280", "shadow": true, "shape": "dot", "size": 90.76684753766482, "title": "\u8bcd\u9891: 1168"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4e13\u4e1a", "label": "\u4e13\u4e1a", "shadow": true, "shape": "dot", "size": 93.27711115199426, "title": "\u8bcd\u9891: 1440"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u9ad8\u6821", "label": "\u9ad8\u6821", "shadow": true, "shape": "dot", "size": 88.37817333565033, "title": "\u8bcd\u9891: 957"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4e2d\u56fd", "label": "\u4e2d\u56fd", "shadow": true, "shape": "dot", "size": 97.42490853204495, "title": "\u8bcd\u9891: 2035"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u9ad8\u8d28\u91cf", "label": "\u9ad8\u8d28\u91cf", "shadow": true, "shape": "dot", "size": 78.79329708124497, "title": "\u8bcd\u9891: 430"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u5ae6\u5a25", "label": "\u5ae6\u5a25", "shadow": true, "shape": "dot", "size": 76.89699525802718, "title": "\u8bcd\u9891: 367"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6708\u7403", "label": "\u6708\u7403", "shadow": true, "shape": "dot", "size": 87.54846930208217, "title": "\u8bcd\u9891: 893"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6837\u54c1", "label": "\u6837\u54c1", "shadow": true, "shape": "dot", "size": 75.14461659336212, "title": "\u8bcd\u9891: 317"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "AI", "label": "AI", "shadow": true, "shape": "dot", "size": 93.79857812619571, "title": "\u8bcd\u9891: 1504"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6280\u672f", "label": "\u6280\u672f", "shadow": true, "shape": "dot", "size": 97.47783682172282, "title": "\u8bcd\u9891: 2044"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u63a8\u52a8", "label": "\u63a8\u52a8", "shadow": true, "shape": "dot", "size": 86.24530329439818, "title": "\u8bcd\u9891: 801"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u672c\u79d1", "label": "\u672c\u79d1", "shadow": true, "shape": "dot", "size": 74.4853231769865, "title": "\u8bcd\u9891: 300"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u516d\u53f7", "label": "\u516d\u53f7", "shadow": true, "shape": "dot", "size": 70.99320482645304, "title": "\u8bcd\u9891: 224"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u5b66\u751f", "label": "\u5b66\u751f", "shadow": true, "shape": "dot", "size": 91.39672972912157, "title": "\u8bcd\u9891: 1231"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u56e2\u961f", "label": "\u56e2\u961f", "shadow": true, "shape": "dot", "size": 84.40546605520012, "title": "\u8bcd\u9891: 687"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u7814\u7a76", "label": "\u7814\u7a76", "shadow": true, "shape": "dot", "size": 95.40095483768998, "title": "\u8bcd\u9891: 1719"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u878d\u5408", "label": "\u878d\u5408", "shadow": true, "shape": "dot", "size": 85.61560029434023, "title": "\u8bcd\u9891: 760"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4f20\u7edf", "label": "\u4f20\u7edf", "shadow": true, "shape": "dot", "size": 79.01399295690206, "title": "\u8bcd\u9891: 438"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6587\u5316", "label": "\u6587\u5316", "shadow": true, "shape": "dot", "size": 85.61560029434023, "title": "\u8bcd\u9891: 760"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u5b66\u4e60", "label": "\u5b66\u4e60", "shadow": true, "shape": "dot", "size": 82.25244048956822, "title": "\u8bcd\u9891: 574"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4ea7\u6559", "label": "\u4ea7\u6559", "shadow": true, "shape": "dot", "size": 73.53145336428764, "title": "\u8bcd\u9891: 277"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6a21\u578b", "label": "\u6a21\u578b", "shadow": true, "shape": "dot", "size": 85.94225688654373, "title": "\u8bcd\u9891: 781"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4eba\u624d", "label": "\u4eba\u624d", "shadow": true, "shape": "dot", "size": 85.81886248307673, "title": "\u8bcd\u9891: 773"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u57f9\u517b", "label": "\u57f9\u517b", "shadow": true, "shape": "dot", "size": 83.13726327221515, "title": "\u8bcd\u9891: 618"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u5b66\u6821", "label": "\u5b66\u6821", "shadow": true, "shape": "dot", "size": 85.18210834337418, "title": "\u8bcd\u9891: 733"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u5b66\u9662", "label": "\u5b66\u9662", "shadow": true, "shape": "dot", "size": 82.16867051587212, "title": "\u8bcd\u9891: 570"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u53d1\u73b0", "label": "\u53d1\u73b0", "shadow": true, "shape": "dot", "size": 84.64720084830972, "title": "\u8bcd\u9891: 701"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4eba\u5de5\u667a\u80fd", "label": "\u4eba\u5de5\u667a\u80fd", "shadow": true, "shape": "dot", "size": 86.94283619381235, "title": "\u8bcd\u9891: 849"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u80cc\u9762", "label": "\u80cc\u9762", "shadow": true, "shape": "dot", "size": 64.1302450375031, "title": "\u8bcd\u9891: 126"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u667a\u80fd", "label": "\u667a\u80fd", "shadow": true, "shape": "dot", "size": 84.95101454412122, "title": "\u8bcd\u9891: 719"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u6570\u636e", "label": "\u6570\u636e", "shadow": true, "shape": "dot", "size": 88.46553721606783, "title": "\u8bcd\u9891: 964"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u8981\u7d20", "label": "\u8981\u7d20", "shadow": true, "shape": "dot", "size": 67.12500240968114, "title": "\u8bcd\u9891: 162"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4f01\u4e1a", "label": "\u4f01\u4e1a", "shadow": true, "shape": "dot", "size": 91.1904209226371, "title": "\u8bcd\u9891: 1210"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u5efa\u8bbe", "label": "\u5efa\u8bbe", "shadow": true, "shape": "dot", "size": 88.5399176194959, "title": "\u8bcd\u9891: 970"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u8c03\u6574", "label": "\u8c03\u6574", "shadow": true, "shape": "dot", "size": 73.61747523803099, "title": "\u8bcd\u9891: 279"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u4eba\u5458", "label": "\u4eba\u5458", "shadow": true, "shape": "dot", "size": 75.69770987976533, "title": "\u8bcd\u9891: 332"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u56fd\u9645", "label": "\u56fd\u9645", "shadow": true, "shape": "dot", "size": 87.05524919385554, "title": "\u8bcd\u9891: 857"}, {"borderWidth": 1.5, "color": {"background": "#FF8C69", "border": "#8B4513", "highlight": {"background": "#FFA07A", "border": "#A0522D"}, "hover": {"background": "#FFA07A", "border": "#A0522D"}}, "font": {"color": "#6B4423"}, "id": "\u670d\u52a1", "label": "\u670d\u52a1", "shadow": true, "shape": "dot", "size": 89.05989820981355, "title": "\u8bcd\u9891: 1013"}]);
+                  edges = new vis.DataSet([{"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6559\u80b2", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 695\nLift: 144.63", "to": "\u804c\u4e1a", "value": 4.881744762234093, "width": 4.881744762234093}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4ea7\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 584\nLift: 63.01", "to": "\u53d1\u5c55", "value": 4.7601282930623, "width": 4.7601282930623}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 554\nLift: 35.30", "to": "\u6559\u80b2", "value": 4.7232776796225036, "width": 4.7232776796225036}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u521b\u65b0", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 528\nLift: 40.23", "to": "\u53d1\u5c55", "value": 4.689691902300809, "width": 4.689691902300809}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u521b\u65b0", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 526\nLift: 85.51", "to": "\u79d1\u6280", "value": 4.687040383978953, "width": 4.687040383978953}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e13\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 462\nLift: 104.65", "to": "\u9ad8\u6821", "value": 4.596408937860363, "width": 4.596408937860363}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e2d\u56fd", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 431\nLift: 26.53", "to": "\u53d1\u5c55", "value": 4.547897911770877, "width": 4.547897911770877}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 421\nLift: 122.64", "to": "\u9ad8\u8d28\u91cf", "value": 4.531503719825208, "width": 4.531503719825208}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u5ae6\u5a25", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 420\nLift: 400.04", "to": "\u6708\u7403", "value": 4.529842983577666, "width": 4.529842983577666}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6708\u7403", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 419\nLift: 462.04", "to": "\u6837\u54c1", "value": 4.528178297894189, "width": 4.528178297894189}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "AI", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 398\nLift: 40.41", "to": "\u6280\u672f", "value": 4.4922729918229045, "width": 4.4922729918229045}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 395\nLift: 61.77", "to": "\u63a8\u52a8", "value": 4.486989947878136, "width": 4.486989947878136}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 385\nLift: 23.59", "to": "\u6280\u672f", "value": 4.469086158625381, "width": 4.469086158625381}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 364\nLift: 39.04", "to": "\u79d1\u6280", "value": 4.429928147507743, "width": 4.429928147507743}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u672c\u79d1", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 350\nLift: 477.30", "to": "\u804c\u4e1a", "value": 4.402550356426105, "width": 4.402550356426105}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u516d\u53f7", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 347\nLift: 1317.61", "to": "\u5ae6\u5a25", "value": 4.396541735842132, "width": 4.396541735842132}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e13\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 331\nLift: 58.29", "to": "\u5b66\u751f", "value": 4.3635944782415415, "width": 4.3635944782415415}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u56e2\u961f", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 309\nLift: 81.68", "to": "\u7814\u7a76", "value": 4.315600608235434, "width": 4.315600608235434}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6280\u672f", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 303\nLift: 60.65", "to": "\u804c\u4e1a", "value": 4.301919390984355, "width": 4.301919390984355}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u5b66\u751f", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 302\nLift: 38.95", "to": "\u6559\u80b2", "value": 4.299612963856558, "width": 4.299612963856558}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6559\u80b2", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 299\nLift: 62.47", "to": "\u878d\u5408", "value": 4.292647732259341, "width": 4.292647732259341}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "AI", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 295\nLift: 31.14", "to": "\u6559\u80b2", "value": 4.283251618026842, "width": 4.283251618026842}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4ea7\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 292\nLift: 47.76", "to": "\u521b\u65b0", "value": 4.2761208263119475, "width": 4.2761208263119475}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4f20\u7edf", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 284\nLift: 266.32", "to": "\u6587\u5316", "value": 4.2567424261880555, "width": 4.2567424261880555}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u5b66\u4e60", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 281\nLift: 124.14", "to": "\u5b66\u751f", "value": 4.24933494965668, "width": 4.24933494965668}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 280\nLift: 46.15", "to": "\u878d\u5408", "value": 4.246848268533622, "width": 4.246848268533622}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4ea7\u6559", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 278\nLift: 412.21", "to": "\u878d\u5408", "value": 4.241848247274955, "width": 4.241848247274955}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "AI", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 277\nLift: 73.61", "to": "\u6a21\u578b", "value": 4.239334779583445, "width": 4.239334779583445}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u521b\u65b0", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 277\nLift: 26.75", "to": "\u6559\u80b2", "value": 4.239334779583445, "width": 4.239334779583445}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6280\u672f", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 277\nLift: 21.52", "to": "\u6559\u80b2", "value": 4.239334779583445, "width": 4.239334779583445}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4eba\u624d", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 271\nLift: 177.08", "to": "\u57f9\u517b", "value": 4.224061446407198, "width": 4.224061446407198}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u5b66\u6821", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 269\nLift: 93.06", "to": "\u5b66\u751f", "value": 4.218895371298863, "width": 4.218895371298863}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u5b66\u9662", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 266\nLift: 190.92", "to": "\u804c\u4e1a", "value": 4.211074060880175, "width": 4.211074060880175}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u73b0", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 265\nLift: 68.65", "to": "\u7814\u7a76", "value": 4.208447416147189, "width": 4.208447416147189}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4eba\u5de5\u667a\u80fd", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 263\nLift: 47.31", "to": "\u6280\u672f", "value": 4.203164372202421, "width": 4.203164372202421}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4eba\u624d", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 260\nLift: 63.87", "to": "\u521b\u65b0", "value": 4.195164285125886, "width": 4.195164285125886}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6708\u7403", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 260\nLift: 721.31", "to": "\u80cc\u9762", "value": 4.195164285125886, "width": 4.195164285125886}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "AI", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 257\nLift: 74.19", "to": "\u667a\u80fd", "value": 4.1870717094451315, "width": 4.1870717094451315}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6708\u7403", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 257\nLift: 52.26", "to": "\u7814\u7a76", "value": 4.1870717094451315, "width": 4.1870717094451315}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6570\u636e", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 257\nLift: 513.70", "to": "\u8981\u7d20", "value": 4.1870717094451315, "width": 4.1870717094451315}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u521b\u65b0", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 256\nLift: 23.78", "to": "\u6280\u672f", "value": 4.184353259426654, "width": 4.184353259426654}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e2d\u56fd", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 255\nLift: 19.90", "to": "\u6559\u80b2", "value": 4.181624211135693, "width": 4.181624211135693}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4f01\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 254\nLift: 26.29", "to": "\u53d1\u5c55", "value": 4.178884481610898, "width": 4.178884481610898}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u6559\u80b2", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 253\nLift: 34.39", "to": "\u79d1\u6280", "value": 4.176133986912975, "width": 4.176133986912975}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e13\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 248\nLift: 21.57", "to": "\u53d1\u5c55", "value": 4.162217027525295, "width": 4.162217027525295}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u5efa\u8bbe", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 246\nLift: 40.27", "to": "\u6559\u80b2", "value": 4.156571835639584, "width": 4.156571835639584}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e13\u4e1a", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 245\nLift: 190.36", "to": "\u8c03\u6574", "value": 4.153732075152654, "width": 4.153732075152654}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4eba\u5458", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 244\nLift: 133.46", "to": "\u7814\u7a76", "value": 4.150880747381309, "width": 4.150880747381309}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u4e2d\u56fd", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 241\nLift: 43.14", "to": "\u56fd\u9645", "value": 4.142256408309681, "width": 4.142256408309681}, {"color": {"color": "#D2B48C", "highlight": "#CD853F", "hover": "#CD853F"}, "from": "\u53d1\u5c55", "smooth": {"type": "continuous"}, "title": "\u5171\u73b0: 240\nLift: 29.68", "to": "\u670d\u52a1", "value": 4.1393578534434585, "width": 4.1393578534434585}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"nodes": {"font": {"size": 12, "face": "MicrosoftYaHei", "strokeWidth": 2, "strokeColor": "#ffffff"}, "scaling": {"min": 8, "max": 25, "label": {"enabled": true, "min": 8, "max": 20}}}, "edges": {"smooth": {"type": "continuous", "roundness": 0.5}, "scaling": {"min": 0.5, "max": 3}, "hidden": false, "hoverWidth": 0.5, "selectionWidth": 0.5}, "physics": {"enabled": true, "forceAtlas2Based": {"gravitationalConstant": -30, "centralGravity": 0.01, "springLength": 100, "springConstant": 0.04, "damping": 0.15, "avoidOverlap": 0.5}, "minVelocity": 0.4, "solver": "forceAtlas2Based", "stabilization": {"enabled": true, "iterations": 500, "updateInterval": 25}}, "interaction": {"hover": true, "tooltipDelay": 200, "hideEdgesOnDrag": false, "hideNodesOnDrag": false, "multiselect": true, "navigationButtons": true}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

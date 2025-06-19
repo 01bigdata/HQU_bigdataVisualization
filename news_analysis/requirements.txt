@@ -1,0 +1,17 @@
+Pillow==11.2.1
+dash==3.0.4
+gensim==4.3.3
+jieba==0.42.1
+matplotlib==3.8.3
+networkx==3.4.2
+numpy==1.26.0
+pandas==1.5.3
+plotly==6.1.2
+pyecharts==2.0.8
+pyldavis==3.4.1
+pyvis==0.3.2
+scikit-learn==1.4.1.post1
+seaborn==0.13.2
+selenium==4.26.1
+webdriver-manager==4.0.2
+wordcloud==1.9.4
