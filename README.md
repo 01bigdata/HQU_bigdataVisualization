@@ -2,7 +2,7 @@
 
 **项目简介**：本项目是一个针对中国科技新闻的大数据可视化课设，旨在通过自然语言处理（NLP）和数据可视化技术，深度挖掘新闻文本中的潜在主题和核心趋势。
 
-**数据来源**：[中国经济网-科技频道](http.www.ce.cn/cysc/tech/)
+**数据来源**：[中国经济网-科技频道]((http://www.ce.cn/xwzx/kj/index.shtml))
 
 ---
 
@@ -13,15 +13,11 @@
 3.  **词语共现网络**：通过构建词语共现矩阵，使用 `NetworkX` 或 `Pyecharts` 可视化高频关键词之间的关联强度与网络结构。
 4.  **多维度图表**：包括词云图、热力图、总体词频分布图等，全面展示数据特征。
 
-*(你可以在这里插入你的可视化截图)*
-*![仪表盘截图](![image](https://github.com/user-attachments/assets/9d931561-ea8b-4946-afe6-f481369a9770)
-)*
 
 ---
 
 ## 技术架构与核心流程
 
-![项目流程图](https://via.placeholder.com/900x150.png?text=Data+Crawling+->+Preprocessing+->+LDA+Topic+Modeling+->+Interactive+Visualization)
 
 1.  **数据采集**：编写爬虫脚本，自动化采集中国经济网特定时间范围内的科技新闻标题、时间和内容。
 2.  **数据预处理**: 对原始文本进行清洗（如去HTML标签、特殊字符），使用 `jieba` 进行中文分词，并结合自定义词典和停用词表，提升分词准确性。
@@ -77,7 +73,7 @@ wordcloud==1.9.4
 
 1.  **克隆项目**
     ```bash
-    git clone [https://github.com/your-username/HQU_bigdataVisualization.git](https://github.com/your-username/HQU_bigdataVisualization.git)
+    git clone [https://github.com/01bigdata/HQU_bigdataVisualization.git](https://github.com/01bigdata/HQU_bigdataVisualization.git)
     cd HQU_bigdataVisualization
     ```
 
